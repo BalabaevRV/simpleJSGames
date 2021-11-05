@@ -1,0 +1,7 @@
+node_modules
+npm-debug.log*
+.idea
+prod
+dev/css/*.css
+dev/css/*.map
+notes.txt
