@@ -69,9 +69,9 @@ const server = () => {
 }
 
 const watcher = () => {
-    watch("/*.html").on("change", browserSync.reload);
-    watch("/scripts/*.js").on("change", browserSync.reload);
-    watch("/styles/*.css").on("change", browserSync.reload);
+    watch("dev/*.html").on("change", browserSync.reload);
+    watch("dev/scripts/*.js").on("change", browserSync.reload);
+    watch("dev/styles/*.css").on("change", browserSync.reload);
 }
 
 const clean = () => {
@@ -89,6 +89,7 @@ const clean = () => {
 // }
 
 exports.server = server;
+exports.watcher = watcher;
 // exports.scripts = scripts;
 // exports.styles = styles;
 // exports.images = images;
