@@ -1,421 +1,358 @@
 "use strict";
 
+import domManipulations from './domManipulations.js';
+
 const $ticTacToeArea = document.querySelector("#ticTacToe");
+const $ticTacToeArea2 = document.querySelector("#ticTacToe2");
 const errorMessageNotFounded = "Area for game not founded. Create html node with id=ticTacToe";
 
-
-if ($ticTacToeArea) {
-
-    let areaSize;
-    let gameContinue = true;
-    let countUncheckCell = 0;
-    let allGameCount = 0;
-
-    const playerNames = {
-        player1: 'первый игрок',
-        player2: 'второй игрок',
-        computer: 'компьютер',
-        count: 0,
-    }
-    const crossPlayer = {
-        id: 'human',
-        name: 'крестики',
-        ai: false,
-        value: 'X',
-        count: 0,
-
-    };
-    const zeroPlayer = {
-        id: 'computer',
-        name: 'нолики',
-        ai: true,
-        value: '0',
-        count: 0,
-    };
-    
-    let currentPlayer = crossPlayer;
-
-    const winCombinations = {
-        winRows: [],
-        winColumns: [],
-        winDiagonal: '',
-        winDiagonalReverse: ''
-    };
-    const fstScreen = createBlock('div', '', ['ticTacToe__screen', 'ticTacToe__screen--active']);
-    const sndScreen = createBlock('div', '', 'ticTacToe__screen');
-
-
-    fstScreen.appendChild(createBlock('h2', 'Выберите количество ячеек', 'ticTacToe__header'));
-    fstScreen.appendChild(createBlock('p', 'минимум 3x3', 'ticTacToe__sign'));
-    fstScreen.appendChild(createInputForSizeArea(3));
-    fstScreen.appendChild(createBlock('h2', 'Кто играет ?', 'ticTacToe__header'));
-    fstScreen.appendChild(createchoosePlayerInput('Крестики: ', 'player1', 'crossPlayer', changePlayer));
-    fstScreen.appendChild(createchoosePlayerInput('Нолики: ', 'computer', 'zeroPlayer', changePlayer));
-    fstScreen.appendChild(createButton('Играть', '', toPlay, true));
-    const buttonGroup = createBlock('div', '', 'buttonGroup');
-    const infoGroup = createBlock('div', '', 'infoGroup');
-    infoGroup.appendChild(createBlock('p', `крестики: 0`, 'infoGroup--text'));
-    infoGroup.appendChild(createBlock('p', `нолики: 0`, 'infoGroup--text'));
-    infoGroup.appendChild(createBlock('p', `Всего игр: 0`, 'infoGroup--text'));
-    infoGroup.appendChild(createBlock('p', `Ходит: ${crossPlayer.name} (${crossPlayer.value})`, 'infoGroup--text', 'ticTacToePlayerMove'));
-    sndScreen.appendChild(infoGroup);
-    buttonGroup.appendChild(createButton('Заново', 'outline', resetGame, '', 'buttonGroup__button'));
-    buttonGroup.appendChild(createButton('Назад', 'outline', goBack, '', 'buttonGroup__button'));
-    sndScreen.appendChild(buttonGroup);
-    $ticTacToeArea.appendChild(fstScreen);
-    $ticTacToeArea.appendChild(sndScreen);
-
-
-
-    function changePlayer (e) {
-        if (e.target.id === 'crossPlayer') {
-            setPlayer(crossPlayer, e.target);
-        } else if (e.target.id === 'zeroPlayer') {
-            setPlayer(zeroPlayer, e.target);
-        }    
-    }
-
-
-    function setPlayer (player, newValue) {
-        player.id = newValue.value;
-        player.name = playerNames[newValue.value];
-        player.ai = player.id === 'computer';
-
-    }
-
-    function resetGame() {
-        clearArea();
-        currentPlayer = crossPlayer;   
-    }
-
-    function clearArea() {
-        const allCell = document.querySelectorAll('.ticTacToe__cell');
-        allCell.forEach(cell => {
-            cell.innerHTML = '';
-            cell.classList.remove('ticTacToe__cell--check');
-            crossPlayer.winCombinations = {...winCombinations};    
-            zeroPlayer.winCombinations = {...winCombinations}; 
-            countUncheckCell = areaSize*areaSize;
-        });
-    }
-
-    function toPlay () {
-        sndScreen.insertBefore(createArea(), infoGroup); 
-        changeScreen();
-        document.addEventListener('keydown', pause);
-        if (currentPlayer.ai) {
-            makeAIMove();
-        }
-    }
-
-    function pause(e) {
-        console.log('pause');
-        if (e.keyCode === 32) {
-            console.log('pause');
-        }
-    }
-
-    function createArea() {
-        let rowNumber = 1;
-        let columnNumber = 1;
-        
-        let winRow = '';
-        let stepDiagonalReverse = areaSize;
-        const div = createBlock('div', '', 'ticTacToe__area');
-        let row = createBlock('div', '', 'ticTacToe__areaRow'); 
-
-        for (let i=1; i<=areaSize; i++) {
-            winCombinations.winColumns[i-1] = '';
-            winCombinations.winDiagonal +=  `cell-${i}-${i} `;
-        }
-
-        for (let i = 1; i<=countUncheckCell; i++) {
-            const cell = createBlock('div', '', 'ticTacToe__cell');
-            cell.id = `cell-${rowNumber}-${columnNumber}`;
-            winRow += `${cell.id} `;
-
-            if (columnNumber === stepDiagonalReverse) {
-                winCombinations.winDiagonalReverse += `${cell.id} `;
-                stepDiagonalReverse -= 1;
-            }
-            winCombinations.winColumns[columnNumber-1] += `${cell.id} `;
-            columnNumber+=1;
-            cell.addEventListener('click', makeMoveHuman);
-            row.appendChild(cell);
-            if (i > 0 && i % areaSize === 0) {
-                div.appendChild(row);  
-                winCombinations.winRows.push(winRow);
-                winRow = '';
-                rowNumber +=1;
-                columnNumber = 1;
-                row = createBlock('div', '', 'ticTacToe__areaRow');  
-
-            }
-        }
-
-        crossPlayer.winCombinations = {...winCombinations};    
-        zeroPlayer.winCombinations = {...winCombinations}; 
-        return div;
-    }
-
-    function makeMove(pressCell) {
-        countUncheckCell -= 1;
-        pressCell.innerHTML = currentPlayer.value; 
-        setTimeout(() => pressCell.classList.add('ticTacToe__cell--check'), 200); 
-        checkWinCombinations (pressCell.id.trim(), currentPlayer.winCombinations);
-        if (countUncheckCell === 0) {
-            winGame(true);
-        }
-        if (gameContinue) {
-            changeCurrentPlayer();
-        }     
-    }
-
-    function makeMoveHuman (e) {
-        if (e.target.innerHTML === '') {
-            gameContinue = true;
-            makeMove (e.target);
-        }   
-    }
-
-    function makeAIMove() {
-        document.body.classList.add('waiting');
-        document.body.addEventListener('click' ,cancelClick, {capture: true});
-        setTimeout(() => {
-            document.body.classList.remove('waiting');
-            document.body.removeEventListener('click' ,cancelClick, {capture: true}); 
-            const cell = getRandomCell();
-            makeMove(cell);
-        }, 1000);
-    }
-
-    function getRandomCell () {
-        const allCell = document.querySelectorAll('.ticTacToe__cell:not(.ticTacToe__cell--check)');
-        const r =randomNumber();
-        const cell = allCell[r];
-        return cell;      
-    }
-
-    function randomNumber () {
-        return Math.floor(Math.random() * (countUncheckCell - 1));
-    }
-
-    function changeCurrentPlayer () {
-        const infoPlayerMove = document.querySelector('#ticTacToePlayerMove');  
-        currentPlayer = (currentPlayer === crossPlayer) ? zeroPlayer : crossPlayer;       
-        if (infoPlayerMove) {
-            infoPlayerMove.innerHTML = `Ходит ${currentPlayer.name} (${currentPlayer.value})`                
-        }
-        if (currentPlayer.ai && gameContinue) {
-            makeAIMove();
-        }
-    }
-
-    function cancelClick (e) {
-        e.stopPropagation();
-    }
-
-    function checkWinCombinations (number, combinations) { 
-        for (let key in combinations) {
-            if (typeof combinations[key] === 'string') {
-                combinations[key] = checkCell (number, combinations[key]);
-            } else if (Array.isArray(combinations[key]))  {
-                combinations[key] = combinations[key].map(str => {
-                    return checkCell(number, str)
-                });
-            }
-        }
-    }
-
-    function checkCell (number, str) {
-        if (str.indexOf(number) === 0 || (str.indexOf(number) && str.indexOf(number)>-1)) {  
-            str = str.replace(number, '');
-        }  
-        if (str.trim() === '') {
-            winGame();
-        }    
-        return str;
-    }
-
-    function winGame(nobodyWin = false) {
-        gameContinue = false;
-        setTimeout(() => {
-            if (nobodyWin) {
-                alert (`Ничья!`);
-            }
-            else {
-                alert (`Выиграл ${currentPlayer.name}!`);
-                currentPlayer.count += 1;
-            }
-            allGameCount += 1;
-            resetGame();
-            updateInfoBlock();          
-            crossPlayer.winCombinations = {...winCombinations};    
-            zeroPlayer.winCombinations = {...winCombinations}; 
-        }, 200);
-    }
-
-    function updateInfoBlock() {
-        const infoGroup = document.querySelector('.infoGroup')
-        infoGroup.innerHTML = '';
-        infoGroup.appendChild(createBlock('p', `Крестики: ${crossPlayer.count}`, 'infoGroup--text'));
-        infoGroup.appendChild(createBlock('p', `Нолики: ${zeroPlayer.count}`, 'infoGroup--text'));
-        infoGroup.appendChild(createBlock('p', `Всего игр: ${allGameCount}`, 'infoGroup--text'));
-        infoGroup.appendChild(createBlock('p', `Ходит: ${crossPlayer.name} игрок (${crossPlayer.value})`, 'infoGroup--text'));
-        sndScreen.insertBefore(infoGroup, buttonGroup);
-    }
-
-    function createchoosePlayerInput (type, selectedItem = 'player1', id = '', changeMethod = null) {
-        const div = document.createElement('div'); 
-        div.classList.add('ticTacToe__inputGroup')
-        const label = document.createElement('label');
-        label.innerHTML = type;
-        label.classList.add('ticTacToe__labelInput');
-        div.appendChild(label);
-        const select = document.createElement('select');
-        select.id = id;
-        const optionHuman = document.createElement('option');
-        optionHuman.value = "human";
-        optionHuman.innerHTML = 'Человек';
-        optionHuman.selected = optionHuman.value === selectedItem; 
-        const optionComp = document.createElement('option');
-        optionComp.value = "computer";
-        optionComp.innerHTML = "Компьютер";    
-        optionComp.selected = optionComp.value === selectedItem;            
-        select.appendChild(optionHuman);
-        select.appendChild(optionComp);
-        select.classList.add('ticTacToe__input');
-        if (changeMethod) {
-            select.addEventListener("change", changeMethod);
-        }
-        div.appendChild(select);
-        return div;
-    }
-
-    function createButton (sign, typeButton = '', clckFunction, clckFunctionParams, classBtn = '') {
-        const btn = document.createElement('button');
-        btn.innerHTML = sign;
-        if (typeButton) {
-            const typeBtn = 'ticTacToe__button' + (typeButton) ? '--' + typeButton : ''; 
-            btn.classList.add(typeBtn);
-        }
-        if (classBtn) {
-            btn.classList.add(classBtn);
-        }
-        btn.classList.add('ticTacToe__button');
-        btn.addEventListener('click', () => clckFunction(clckFunctionParams));
-        return btn;     
-    }
-
-    function changeScreen () {
-        const currentScreen = document.querySelector('.ticTacToe__screen--active');
-        currentScreen.addEventListener('transitionend', addActiveScreen);
-        currentScreen.classList.toggle('ticTacToe__screen--active');
-    }
-    
-    function addActiveScreen(e) {
-        let newScreen;
-        const allScreen = document.querySelectorAll('.ticTacToe__screen');
-        allScreen.forEach(screen => {
-            if (screen !== e.target) {
-                newScreen = screen; 
-            }; 
-        });
-        if (newScreen) {
-            newScreen.classList.add('ticTacToe__screen--active');   
+class ticTacToeGame {
+    constructor (gameBlock) {
+        this.gameBlock = gameBlock;
+        this.gameContinue = true; 
+        this.areaSize = 0;
+        this.countUncheckCell = 0;
+        this.allGameCount = 0;
+        this.fstPlayer = {
+            id: 'human',
+            name: 'крестики',
+            ai: false,
+            value: 'X',
+            count: 0,
+        };
+        this.sndPlayer = {
+            id: 'computer',
+            name: 'нолики',
+            ai: true,
+            value: '0',
+            count: 0,
+        };
+        this.currentPlayer = this.fstPlayer;
+        this.winCombinations = {
+            winRows: [],
+            winColumns: [],
+            winDiagonal: '',
+            winDiagonalReverse: ''
         };
 
-        e.target.removeEventListener('transitionend', addActiveScreen);
+        this.buttonGroup = this.createButtonGroup();
+        this.infoGroup = this.createInfoGroup();
+        this.fstScreen = this.createFstScreen();
+        this.sndScreen = this.createSndScreen();
+        
+        gameBlock.appendChild(this.fstScreen);
+        gameBlock.appendChild(this.sndScreen);
+
+    }
+    
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++Создание блоков
+    createInfoGroup () {
+        const infoGroup = domManipulations.createBlock('div', '', 'infoGroup');
+        return infoGroup; 
     }
 
-    function clearWinCombinations() {
-        winCombinations.winRows = [];
-        winCombinations.winColumns = [];
-        winCombinations.winDiagonal = '';
-        winCombinations.winDiagonalReverse = '';
-    } 
-
-    function goBack () {
-        countUncheckCell = areaSize * areaSize;
-        clearWinCombinations();
-        destroyArea();
-        changeScreen();
-    }   
-
-    function destroyArea() {
-
-        const area = document.querySelector('.ticTacToe__area');
-        if (area) {
-            destroyBlock(area);
-        }
+    createButtonGroup() {
+        const buttonGroup = domManipulations.createBlock('div', '', 'buttonGroup');
+        buttonGroup.appendChild(domManipulations.createButton('Заново', 'ticTacToe__button', 'outline', this.clearTicTacToeArea.bind(this), '', 'buttonGroup__button'));
+        buttonGroup.appendChild(domManipulations.createButton('Назад', 'ticTacToe__button', 'outline', this.goBack.bind(this), '', 'buttonGroup__button'));
+        return buttonGroup;
     }
 
-    function destroyBlock (block) {
-        block.remove();
+    createFstScreen () {
+        const fstScreen = domManipulations.createBlock('div', '', ['ticTacToe__screen', 'ticTacToe__screen--active']);
+        fstScreen.appendChild(domManipulations.createBlock('h2', 'Выберите количество ячеек', 'ticTacToe__header'));
+        fstScreen.appendChild(domManipulations.createBlock('p', 'минимум 3x3', 'ticTacToe__sign'));
+        fstScreen.appendChild(this.createInputForSizeArea(3));
+        fstScreen.appendChild(domManipulations.createBlock('h2', 'Кто играет ?', 'ticTacToe__header'));        
+        fstScreen.appendChild(domManipulations.createSelect ('ticTacToe__inputGroup' ,'ticTacToe__labelInput', 'Крестики: ', 'fstPlayer', 'ticTacToe__input', 'human', this.changeTypePlayer.bind(this)));
+        fstScreen.appendChild(domManipulations.createSelect ('ticTacToe__inputGroup' ,'ticTacToe__labelInput', 'Нолики: ' , 'sndPlayer', 'ticTacToe__input', 'computer', this.changeTypePlayer.bind(this)));
+        fstScreen.appendChild(domManipulations.createButton('Играть', 'ticTacToe__button', '', this.toPlay.bind(this), true));
+        return fstScreen; 
     }
 
-    function createBlock (type = 'p', text = '', classBlock = '', id = '') {
-        const block = document.createElement(type);
-        block.innerHTML = text;
-        if (classBlock) {
-            if (Array.isArray(classBlock)) {
-                classBlock.forEach(classEl => {
-                    block.classList.add(classEl); 
-                });
-            } else {
-                block.classList.add(classBlock);         
-            }     
-        }
-        if (id) {
-            block.id = id;
-        }
-        return block;      
+    createSndScreen () {
+        const sndScreen = domManipulations.createBlock('div', '', 'ticTacToe__screen');   
+        sndScreen.appendChild(this.infoGroup);
+        sndScreen.appendChild(this.buttonGroup);
+        return sndScreen;
     }
 
-    function createInputForSizeArea(defaultValue = 3) {
-        createInputArea();
-        const div = document.createElement('div');
-        div.appendChild(createInputArea(defaultValue));
-        div.appendChild(createBlock('span', ' X ', ['ticTacToe__bigText','ticTacToe__crossArea'])); 
-        div.classList.add('ticTacToe__inputAreaContainer');
-        div.appendChild(createInputArea(defaultValue));
-        areaSize = defaultValue;
-        countUncheckCell = areaSize * areaSize;
+    createInputForSizeArea(defaultValue = 3) {
+        const div = domManipulations.createBlock('div', '', 'ticTacToe__inputAreaContainer');
+        div.appendChild(domManipulations.createInput(3, 'text', 'ticTacToe__inputArea', this.inputSizeArea.bind(this), this.BlurSizeArea.bind(this)));
+        div.appendChild(domManipulations.createBlock('span', ' X ', ['ticTacToe__bigText','ticTacToe__crossArea'])); 
+        div.appendChild(domManipulations.createInput(3, 'text', 'ticTacToe__inputArea', this.inputSizeArea.bind(this), this.BlurSizeArea.bind(this)));
+        this.areaSize = defaultValue;
+        this.countUncheckCell = this.areaSize * this.areaSize;
         return (div);   
-        function createInputArea(value = 3) {
-            const input = document.createElement("input");
-            input.type = 'text';
-            input.value = 3;
-            input.classList.add('ticTacToe__inputArea');  
-            input.addEventListener('input', inputSizeArea);
-            input.addEventListener('blur', BlurSizeArea);
-            return (input);  
-        }
-
     }
 
-    function inputSizeArea(e) {
+// ----------------------------------------------------------Создание блоков
+
+
+
+
+
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++Обработчики событий
+    changeTypePlayer (e) {
+        this[e.target.id].id = e.target.value;
+        this[e.target.id].ai = e.target.value === 'computer';
+    }
+
+    inputSizeArea (e) {
         const regExp = /^\d{1,2}$/;
         const allInput = document.querySelectorAll('.ticTacToe__inputArea');
         const newValue = e.target.value; 
         if (newValue.match(regExp) || newValue === '') {
             allInput.forEach(input => input.value = newValue);
-            areaSize = Number(newValue);
-            countUncheckCell = areaSize * areaSize;
+            this.areaSize = Number(newValue);
+            this.countUncheckCell = this.areaSize * this.areaSize;
         } else {
-            allInput.forEach(input => input.value = areaSize);
+            allInput.forEach(input => input.value = this.areaSize);
             console.log('Вводите число больше 3 и меньшее 99');
         }
     }
 
-    function BlurSizeArea(e) {
-        if (e.target.value === '' || e.target.value < 2) {
+    BlurSizeArea (e) {
+        if (e.target.value === '' || Number(e.target.value) < 3) {
+            console.log(2);
             const allInput = document.querySelectorAll('.ticTacToe__inputArea');
             allInput.forEach(input => input.value = 3);
         } 
     }
 
+    cancelClick (e) {
+        e.stopPropagation();
+    }
 
+    clearTicTacToeArea() {
+        const allCell = document.querySelectorAll('.ticTacToe__cell');
+        allCell.forEach(cell => {
+            cell.innerHTML = '';
+            cell.classList.remove('ticTacToe__cell--check');
+            this.setPlayersWinCombinations();
+            this.countUncheckCell = this.areaSize * this.areaSize;
+        });
+    }
+
+// -----------------------------------------------------------------Обработчики событий
+   
+
+
+
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Управление игрой
+    toPlay () {
+        domManipulations.changeScreen(this.gameBlock,'ticTacToe__screen--active', 'next');
+        this.updateInfoBlock();
+        this.sndScreen.insertBefore(this.createArea(), this.infoGroup); 
+        this.sndScreen.style.height = (1024 > Number(this.sndScreen.scrollHeight)) ? `${1024}px` : `${this.sndScreen.scrollHeight}px`;
+        if (this.currentPlayer.ai) {
+            this.makeAIMove();
+        }
+    }
+
+    makeMoveHuman (e) {
+        if (e.target.innerHTML === '') {
+            this.gameContinue = true;
+            this.makeMove (e.target);
+        }   
+    }
+
+    makeMove (pressCell) {
+        this.countUncheckCell -= 1;
+        pressCell.innerHTML = this.currentPlayer.value; 
+        setTimeout(() => pressCell.classList.add('ticTacToe__cell--check'), 200); 
+        this.checkWinCombinations (pressCell.id.trim(), this.currentPlayer.winCombinations);
+        if (this.countUncheckCell === 0) {
+            this.gameContinue = false;
+            this.winGame(true);
+        }
+        if (this.gameContinue) {
+            this.changeCurrentPlayer();
+        }     
+    }
+
+    winGame(nobodyWin = false) {
+        setTimeout(() => {
+            if (nobodyWin) {
+                alert (`Ничья!`);
+            }
+            else {
+                alert (`Выиграл ${this.currentPlayer.name}!`);
+                this.currentPlayer.count += 1;
+            }
+            this.allGameCount += 1;
+            this.resetGame();
+            this.updateInfoBlock();          
+        }, 200);
+    }
+
+    resetGame () {
+        this.clearArea();
+        this.currentPlayer = this.fstPlayer;   
+    }
+
+    clearArea() {
+        const allCell = document.querySelectorAll('.ticTacToe__cell');
+        allCell.forEach(cell => {
+            cell.innerHTML = '';
+            cell.classList.remove('ticTacToe__cell--check');
+            this.setPlayersWinCombinations();
+            this.countUncheckCell = this.areaSize * this.areaSize;
+        });
+    }
+
+    makeAIMove () {
+        document.body.classList.add('waiting');
+        document.body.addEventListener('click' , this.cancelClick, {capture: true});
+        setTimeout(() => {
+            document.body.classList.remove('waiting');
+            document.body.removeEventListener('click' , this.cancelClick, {capture: true}); 
+            const cell = this.getRandomCell();
+            this.makeMove(cell);
+        }, 1000);
+    }   
+
+    checkWinCombinations (number, combinations) { 
+        for (let key in combinations) {
+            if (typeof combinations[key] === 'string') {
+                combinations[key] = this.checkCell (number, combinations[key]);
+            } else if (Array.isArray(combinations[key]))  {
+                combinations[key] = combinations[key].map(str => {
+                    return this.checkCell(number, str)
+                });
+            }
+        }
+    }
+
+    checkCell (number, str) {
+        if (str.indexOf(number) === 0 || (str.indexOf(number) && str.indexOf(number)>-1)) {  
+            str = str.replace(number, '');
+        }  
+        if (str.trim() === '') {
+            this.gameContinue = false;
+            this.winGame();
+        }    
+        return str;
+    }
+
+    changeCurrentPlayer () {
+        const infoPlayerMove = document.querySelector('#ticTacToePlayerMove');  
+        this.currentPlayer = (this.currentPlayer === this.fstPlayer) ? this.sndPlayer : this.fstPlayer;       
+        if (infoPlayerMove) {
+            infoPlayerMove.innerHTML = `Ходит ${this.currentPlayer.name} (${this.currentPlayer.value})`                
+        }
+        if (this.currentPlayer.ai && this.gameContinue) {
+            this.makeAIMove();
+        }
+    }
+
+    goBack () {
+        this.countUncheckCell = this.areaSize * this.areaSize;
+        this.clearWinCombinations();
+        domManipulations.destroyBlock('.ticTacToe__area');
+        domManipulations.changeScreen(this.gameBlock, 'ticTacToe__screen--active', 'back');
+        this.sndScreen.style.height = '';
+    }  
+    //------------------------------------------------------------------------Управление игрой
+
+
+
+
+
+    getRandomCell () {
+        const allCell = document.querySelectorAll('.ticTacToe__cell:not(.ticTacToe__cell--check)');
+        const NumberCell = this.randomNumber();
+        const cell = allCell[NumberCell];
+        return cell;      
+    }
+
+    randomNumber () {
+        return Math.floor(Math.random() * (this.countUncheckCell - 1));
+    }
+
+    setPlayersWinCombinations () { 
+        this.fstPlayer.winCombinations = {...this.winCombinations};    
+        this.sndPlayer.winCombinations = {...this.winCombinations}; 
+    }
+
+    updateInfoBlock() {
+        const infoGroup = this.infoGroup;
+        infoGroup.innerHTML = '';
+        infoGroup.appendChild(domManipulations.createBlock('p', `(${this.fstPlayer.name}): ${this.fstPlayer.count}`, 'infoGroup--text'));
+        infoGroup.appendChild(domManipulations.createBlock('p', `(${this.sndPlayer.name}): ${this.sndPlayer.count}`, 'infoGroup--text'));
+        infoGroup.appendChild(domManipulations.createBlock('p', `Всего игр: ${this.allGameCount}`, 'infoGroup--text'));
+        infoGroup.appendChild(domManipulations.createBlock('p', `Ходит: ${this.currentPlayer.name} (${this.currentPlayer.value})`, 'infoGroup--text', 'ticTacToePlayerMove'));
+        this.sndScreen.insertBefore(infoGroup, this.buttonGroup);
+    }
+
+    
+
+    clearWinCombinations() {
+        this.winCombinations.winRows = [];
+        this.winCombinations.winColumns = [];
+        this.winCombinations.winDiagonal = '';
+        this.winCombinations.winDiagonalReverse = '';
+    } 
+
+ //!!!!!!!!!!!!!!!!!!!Переделать!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    stepDiagonalWinCombination () {
+        for (let i=1; i<=this.areaSize; i++) {
+            this.winCombinations.winColumns[i-1] = '';
+            this.winCombinations.winDiagonal +=  `cell-${i}-${i} `;
+        }
+    }
+
+    createArea() {
+        let rowNumber = 1;
+        let columnNumber = 1;
+        
+        let winRow = '';
+        let stepDiagonalReverse = this.areaSize;
+        const div = domManipulations.createBlock('div', '', 'ticTacToe__area');
+        let row = domManipulations.createBlock('div', '', 'ticTacToe__areaRow'); 
+
+        this.stepDiagonalWinCombination(); 
+
+        for (let i = 1; i<=this.countUncheckCell; i++) {
+            const cell = domManipulations.createBlock('div', '', 'ticTacToe__cell', `cell-${rowNumber}-${columnNumber}`);
+            cell.addEventListener('click', this.makeMoveHuman.bind(this));
+            row.appendChild(cell);
+
+            winRow += `${cell.id} `;
+
+            if (columnNumber === stepDiagonalReverse) {
+                this.winCombinations.winDiagonalReverse += `${cell.id} `;
+                stepDiagonalReverse -= 1;
+            }
+
+            this.winCombinations.winColumns[columnNumber-1] += `${cell.id} `;
+            columnNumber+=1;
+
+            if (i > 0 && i % this.areaSize === 0) {
+                div.appendChild(row);  
+                this.winCombinations.winRows.push(winRow);
+                winRow = '';
+                rowNumber +=1;
+                columnNumber = 1;
+                row = domManipulations.createBlock('div', '', 'ticTacToe__areaRow');  
+            }
+        }
+    
+        this.setPlayersWinCombinations();
+        return div;
+    }
+
+}
+
+
+if ($ticTacToeArea) {
+    console.log(new ticTacToeGame($ticTacToeArea));
+    console.log(new ticTacToeGame($ticTacToeArea2));
 } else {
     console.error (errorMessageNotFounded);
 }
