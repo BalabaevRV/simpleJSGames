@@ -9,9 +9,8 @@ body {
 }
 
 
-#ticTacToe, #ticTacToe2 {
+#ticTacToe {
     font-family: Montserrat;  
-    width: 50%;
     height: 768px;
     position: relative;
     overflow: auto;

@@ -3,7 +3,6 @@
 import domManipulations from './domManipulations.js';
 
 const $ticTacToeArea = document.querySelector("#ticTacToe");
-const $ticTacToeArea2 = document.querySelector("#ticTacToe2");
 const errorMessageNotFounded = "Area for game not founded. Create html node with id=ticTacToe";
 
 class ticTacToeGame {
@@ -352,7 +351,6 @@ class ticTacToeGame {
 
 if ($ticTacToeArea) {
     console.log(new ticTacToeGame($ticTacToeArea));
-    console.log(new ticTacToeGame($ticTacToeArea2));
 } else {
     console.error (errorMessageNotFounded);
 }
